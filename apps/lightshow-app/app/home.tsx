@@ -7,19 +7,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useSocket } from "@/hooks/useSocket";
 
 export default function HomeScreen() {
-  const { host, isConnected } = useSocket();
-
-  // Format the server URL for display
-  const getDisplayUrl = () => {
-    if (!host) return "Not connected";
-
-    try {
-      // Remove http:// or https:// prefix for cleaner display
-      return host.replace(/^https?:\/\//, "");
-    } catch (e) {
-      return host;
-    }
-  };
+  const { isConnected, host } = useSocket();
 
   const handleHostSession = () => {
     router.push("/host");
@@ -73,7 +61,7 @@ export default function HomeScreen() {
               Current Server:
             </ThemedText>
             <ThemedText style={styles.serverInfoValue}>
-              {getDisplayUrl()}
+              {host ?? "Not connected"}
             </ThemedText>
           </ThemedView>
           <TouchableOpacity

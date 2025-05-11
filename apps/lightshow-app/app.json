@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "lightshow",
-    "slug": "lightshow",
+    "slug": "tuchor-lightshow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,13 +9,32 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSBonjourServices": [
+          "_tuchoir-lightshow._tcp",
+          "_tuchoir-lightshow._tcp"
+        ],
+        "NSLocalNetworkUsageDescription": "Allow Tuchor Lightshow to discover devices on the local network.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.networking.multicast": true
+      },
+      "bundleIdentifier": "com.p.aaron.tuchorlightshow"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+        "android.permission.INTERNET"
+      ],
+      "package": "com.p.aaron.tuchorlightshow"
     },
     "web": {
       "bundler": "metro",
@@ -32,10 +51,33 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "15b91248-565d-4adf-ba7f-b6f2d3fe85b4"
+      }
+    },
+    "owner": "p.aaron",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/15b91248-565d-4adf-ba7f-b6f2d3fe85b4"
     }
   }
 }

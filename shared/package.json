@@ -1,0 +1,10 @@
+{
+  "name": "@tuchor/lightshow-shared",
+  "version": "1.0.0",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

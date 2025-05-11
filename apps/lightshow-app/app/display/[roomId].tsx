@@ -1,111 +1,128 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, BackHandler, TouchableOpacity } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import * as Brightness from 'expo-brightness';
-import * as KeepAwake from 'expo-keep-awake';
+import * as Brightness from "expo-brightness";
+import * as KeepAwake from "expo-keep-awake";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { BackHandler, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { ThemedText } from '@/components/ThemedText';
-import socketService from '@/services/socketService';
+import { ThemedText } from "@/components/ThemedText";
+import { useSessionStateQuery } from "@/hooks/useSessionStateQuery";
+import { useSessionsQuery } from "@/hooks/useSessionsQuery";
 
 export default function DisplayScreen() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
-  const [displayState, setDisplayState] = useState<'white' | 'black'>('white');
   const [showBackButton, setShowBackButton] = useState(false);
+  const { data: sessionState } = useSessionStateQuery(sessionId);
+  const { data: sessions } = useSessionsQuery();
   const router = useRouter();
-  
-  useEffect(() => {
-    // Listen for state updates
-    const updateStateCleanup = socketService.onUpdateState((state) => {
-      console.log('Received state update:', state);
-      setDisplayState(state);
-      
-      // Set screen brightness based on state
-      adjustBrightness(state);
-    });
 
-    const sessionListCleanup = socketService.onSessionList((sessionList) => {
-      if (!sessionList.find((session) => session.sessionId === sessionId)) {
-        console.log('Session not found, redirecting to join');
+  // Adjust brightness based on session state
+  useEffect(() => {
+    if (sessionState) {
+      adjustBrightness(sessionState.screenColor);
+    }
+  }, [sessionState]);
+
+  // If the session is not found, go back
+  useEffect(() => {
+    if (sessions) {
+      const session = sessions.find(
+        (session) => session.sessionId === sessionId
+      );
+      if (!session) {
         router.back();
       }
-    });
-    
-    // Set screen brightness on mount
-    adjustBrightness(displayState);
-    
-    // Keep the screen awake
+    }
+  }, [sessions]);
+
+  // Keep the screen awake
+  useEffect(() => {
     KeepAwake.activateKeepAwakeAsync();
-    
+
     // Disable hardware back button (Android)
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      // Show back button on hardware back press
-      setShowBackButton(true);
-      return true;
-    });
-    
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // Show back button on hardware back press
+        setShowBackButton(true);
+        return true;
+      }
+    );
+
     return () => {
       Brightness.restoreSystemBrightnessAsync();
       KeepAwake.deactivateKeepAwake();
       backHandler.remove();
-      updateStateCleanup();
-      sessionListCleanup();
     };
   }, [sessionId]);
-  
-  const adjustBrightness = async (state: 'white' | 'black') => {
+
+  const adjustBrightness = async (state: "white" | "black") => {
     try {
       // Request permission if needed (Android)
       const { status } = await Brightness.requestPermissionsAsync();
-      if (status === 'granted') {
+      if (status === "granted") {
         // Set brightness to max for white, lower for black
-        await Brightness.setBrightnessAsync(state === 'white' ? 1 : 0.3);
+        await Brightness.setBrightnessAsync(state === "white" ? 1 : 0.3);
       }
     } catch (error) {
-      console.error('Failed to adjust brightness:', error);
+      console.error("Failed to adjust brightness:", error);
     }
   };
-  
+
   const handleBack = () => {
     // Clean up before leaving
     Brightness.restoreSystemBrightnessAsync();
     KeepAwake.deactivateKeepAwake();
-    
+
     // Go back
     router.back();
   };
-  
+
   return (
-    <View 
+    <View
       style={[
-        styles.container, 
-        { backgroundColor: displayState === 'white' ? '#ffffff' : '#000000' }
+        styles.container,
+        {
+          backgroundColor:
+            sessionState?.screenColor === "white" ? "#ffffff" : "#000000",
+        },
       ]}
     >
-      <Stack.Screen options={{ 
-        headerShown: false,
-        animation: 'none',
-        gestureEnabled: false
-      }} />
-      
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          animation: "none",
+          gestureEnabled: false,
+        }}
+      />
+
       {/* Touch area for showing/hiding back button */}
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.fullScreenTouchArea}
         onPress={() => setShowBackButton(!showBackButton)}
         activeOpacity={1}
       />
-      
+
       {showBackButton && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.backButton,
-            { backgroundColor: displayState === 'white' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)' }
-          ]} 
+            {
+              backgroundColor:
+                sessionState?.screenColor === "white"
+                  ? "rgba(0,0,0,0.3)"
+                  : "rgba(255,255,255,0.3)",
+            },
+          ]}
           onPress={handleBack}
         >
-          <ThemedText style={[
-            styles.backButtonText,
-            { color: displayState === 'white' ? '#000' : '#fff' }
-          ]}>
+          <ThemedText
+            style={[
+              styles.backButtonText,
+              {
+                color: sessionState?.screenColor === "white" ? "#000" : "#fff",
+              },
+            ]}
+          >
             ← Back
           </ThemedText>
         </TouchableOpacity>
@@ -117,18 +134,18 @@ export default function DisplayScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   fullScreenTouchArea: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     left: 20,
     padding: 15,
@@ -136,6 +153,6 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
-  }
-}); 
+    fontWeight: "bold",
+  },
+});
