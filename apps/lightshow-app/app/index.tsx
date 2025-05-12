@@ -1,37 +1,24 @@
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { useScanServersQuery } from "@/hooks/useScanServersQuery";
 import { useSocket } from "@/hooks/useSocket";
 
 export default function HomeScreen() {
-  const { host, isConnected } = useSocket();
+  const { isConnected, isConnecting, host, connect } = useSocket();
+  const { data: servers } = useScanServersQuery();
 
-  // Format the server URL for display
-  const getDisplayUrl = () => {
-    if (!host) return "Not connected";
-
-    try {
-      // Remove http:// or https:// prefix for cleaner display
-      return host.replace(/^https?:\/\//, "");
-    } catch (e) {
-      return host;
+  useEffect(() => {
+    // If we have a server and we are not connected, connect to it
+    if (servers && servers.length > 0 && !isConnected && !isConnecting) {
+      connect(servers[0].socketUrl);
     }
-  };
+  }, [servers, isConnected, isConnecting, connect]);
 
-  const handleHostSession = () => {
-    router.push("/host");
-  };
-
-  const handleJoinSession = () => {
-    router.push("/join");
-  };
-
-  const handleSelectServer = () => {
-    router.push("/server-select" as any);
-  };
+  const displayUrl = host ?? "Not connected";
 
   return (
     <ThemedView style={styles.container}>
@@ -43,7 +30,7 @@ export default function HomeScreen() {
         <ThemedView style={styles.optionsContainer}>
           <TouchableOpacity
             style={[styles.button, !isConnected && styles.disabledButton]}
-            onPress={handleHostSession}
+            onPress={() => router.push("/host")}
             disabled={!isConnected}
           >
             <ThemedText style={styles.buttonText}>Host a Session</ThemedText>
@@ -51,7 +38,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.button, !isConnected && styles.disabledButton]}
-            onPress={handleJoinSession}
+            onPress={() => router.push("/join")}
             disabled={!isConnected}
           >
             <ThemedText style={styles.buttonText}>Join a Session</ThemedText>
@@ -59,7 +46,7 @@ export default function HomeScreen() {
 
           <TouchableOpacity
             style={[styles.button, styles.selectServerButton]}
-            onPress={handleSelectServer}
+            onPress={() => router.push("/server-select")}
           >
             <ThemedText style={styles.buttonText}>Select Server</ThemedText>
           </TouchableOpacity>
@@ -72,13 +59,11 @@ export default function HomeScreen() {
             <ThemedText style={styles.serverInfoLabel}>
               Current Server:
             </ThemedText>
-            <ThemedText style={styles.serverInfoValue}>
-              {getDisplayUrl()}
-            </ThemedText>
+            <ThemedText style={styles.serverInfoValue}>{displayUrl}</ThemedText>
           </ThemedView>
           <TouchableOpacity
             style={styles.changeServerButton}
-            onPress={handleSelectServer}
+            onPress={() => router.push("/server-select")}
           >
             <ThemedText style={styles.changeServerButtonText}>
               Change

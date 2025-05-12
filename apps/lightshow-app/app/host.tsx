@@ -10,6 +10,7 @@ export default function HostScreen() {
     sessionId: string;
     name: string;
   } | null>(null);
+
   const [lightState, setLightState] = useState<"white" | "black">("white");
   const { socket } = useSocket();
 
@@ -26,6 +27,7 @@ export default function HostScreen() {
     });
   };
 
+  // Delete the session when this page is closed
   useEffect(() => {
     return () => {
       if (currentSession) {
@@ -39,8 +41,8 @@ export default function HostScreen() {
     if (!currentSession) return;
 
     const newState = {
-      screenColor: lightState,
-    };
+      screenColor: lightState === "white" ? "black" : "white",
+    } as const;
     socket?.emit("updateSessionState", currentSession.sessionId, newState);
     setLightState(newState.screenColor);
   };

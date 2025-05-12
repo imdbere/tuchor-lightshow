@@ -1,12 +1,8 @@
+import { delay } from '@/utils/delay';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import Zeroconf from 'react-native-zeroconf';
 
-export interface Service {
-    name: string,
-    ip: string,
-    port: number
-}
 
 const QUERY_KEY = ['servers'];
 const zeroconf = new Zeroconf();
@@ -37,11 +33,13 @@ export function useScanServersQuery() {
 
     return useQuery({
         queryKey: QUERY_KEY,
-        queryFn: () => {
+        queryFn: async () => {
             scan();
+            // Scanning doesn't have a fixed amount of time, so we just wait for 2 seconds
+            await delay(2000);
             return getServices();
         },
-        initialData: [],
+        initialData: []
     });
 }
 
@@ -52,7 +50,10 @@ function getServices() {
         .map(s => ({
             name: s.name,
             ip: s.addresses[0],
+            socketUrl: `http://${s.addresses[0]}:${s.port}`,
             port: s.port
         }));
 
 }
+
+export type Service = ReturnType<typeof getServices>[number];

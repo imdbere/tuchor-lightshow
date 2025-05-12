@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -15,56 +15,19 @@ import { Service, useScanServersQuery } from "@/hooks/useScanServersQuery";
 import { useSocket } from "@/hooks/useSocket";
 
 export default function ServerSelectScreen() {
-  const { data: services, refetch } = useScanServersQuery();
-  const { connect } = useSocket();
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<Service | null>(null);
-  const [initialScan, setInitialScan] = useState(true);
-
-  useEffect(() => {
-    // Set initial scan to false after 2 seconds
-    const timer = setTimeout(() => {
-      setInitialScan(false);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // When services are found, set initial scan to false
-  useEffect(() => {
-    if (services.length > 0 && initialScan) {
-      setInitialScan(false);
-    }
-  }, [services]);
-
-  // Auto-select the first server if none is selected
-  useEffect(() => {
-    if (services.length > 0 && !selectedServer) {
-      setSelectedServer(services[0]);
-    }
-  }, [services, selectedServer]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    refetch();
-    setTimeout(() => setRefreshing(false), 2000);
-  };
+  const { data: services, refetch, isFetching } = useScanServersQuery();
+  const { connect, host, isConnected, isConnecting } = useSocket();
 
   const handleSelectServer = (server: Service) => {
-    setSelectedServer(server);
-  };
-
-  const handleConnect = () => {
-    if (selectedServer) {
-      const serverUrl = `http://${selectedServer.ip}:${selectedServer.port}`;
-      connect(serverUrl);
-      router.replace("/"); // Use replace to prevent back navigation to this screen
-    }
+    console.log("Connecting to", server.socketUrl);
+    connect(server.socketUrl);
   };
 
   const renderItem = ({ item }: { item: Service }) => {
-    const isSelected =
-      selectedServer?.ip === item.ip && selectedServer?.port === item.port;
+    const isSelected = item.socketUrl === host;
+    const isCurrentlyConnecting = isSelected && isConnecting;
+    const isCurrentlyConnected = isSelected && isConnected;
+
     return (
       <TouchableOpacity
         style={[styles.serverItem, isSelected && styles.selectedServerItem]}
@@ -78,7 +41,13 @@ export default function ServerSelectScreen() {
         </View>
         {isSelected && (
           <View style={styles.selectedIndicator}>
-            <ThemedText style={styles.selectedIndicatorText}>✓</ThemedText>
+            {isCurrentlyConnecting ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : isCurrentlyConnected ? (
+              <ThemedText style={styles.selectedIndicatorText}>✓</ThemedText>
+            ) : (
+              <ThemedText style={styles.selectedIndicatorText}>!</ThemedText>
+            )}
           </View>
         )}
       </TouchableOpacity>
@@ -91,7 +60,7 @@ export default function ServerSelectScreen() {
         <ThemedText type="title">Select a Server</ThemedText>
       </ThemedView>
 
-      {initialScan ? (
+      {isFetching && services.length === 0 ? (
         <ThemedView style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4C96D7" />
           <ThemedText style={styles.loadingText}>
@@ -116,13 +85,13 @@ export default function ServerSelectScreen() {
             </ThemedView>
           }
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
           }
         />
       )}
 
       <ThemedView style={styles.buttonContainer}>
-        {services.length === 0 && !initialScan ? (
+        {services.length === 0 && isFetching ? (
           <TouchableOpacity
             style={styles.refreshButton}
             onPress={() => refetch()}
@@ -131,11 +100,11 @@ export default function ServerSelectScreen() {
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.button, !selectedServer && styles.disabledButton]}
-            onPress={handleConnect}
-            disabled={!selectedServer}
+            style={[styles.button, !isConnected && styles.disabledButton]}
+            onPress={() => router.replace("/")}
+            disabled={!isConnected}
           >
-            <ThemedText style={styles.buttonText}>Connect</ThemedText>
+            <ThemedText style={styles.buttonText}>Confirm</ThemedText>
           </TouchableOpacity>
         )}
       </ThemedView>
@@ -160,13 +129,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#3B82F6",
-    backgroundColor: "rgba(59, 130, 246, 0.15)",
+    borderColor: "#cccccc",
+    backgroundColor: "rgba(240, 240, 240, 0.15)",
   },
   selectedServerItem: {
     borderColor: "#60A5FA",
     borderWidth: 2,
-    backgroundColor: "rgba(96, 165, 250, 0.2)",
+    backgroundColor: "rgba(96, 165, 250, 0.3)",
+    shadowColor: "#60A5FA",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   serverItemContent: {
     flex: 1,

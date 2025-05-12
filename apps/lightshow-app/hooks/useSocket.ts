@@ -5,28 +5,30 @@ import { io, Socket } from "socket.io-client";
 let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
 
 interface SocketState {
-    host: string;
-    connected: boolean;
+    host?: string;
+    isConnected: boolean;
+    isConnecting: boolean;
     socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
 }
 
 const socketStateAtom = atom<SocketState>({
-    host: '',
-    connected: false,
+    host: undefined,
+    isConnected: false,
+    isConnecting: false,
     socket: undefined
 });
 
 export function useSocket() {
     const [socketState, setSocketState] = useAtom(socketStateAtom);
 
-    function handleConnect() {
+    async function handleConnect() {
         console.log('Connected to socketIO server')
-        setSocketState(state => ({ ...state, connected: true }))
+        setSocketState(state => ({ ...state, isConnected: true, isConnecting: false }))
     }
 
     function handleDisconnect() {
         console.log('Disconnected from socketIO server');
-        setSocketState(state => ({ ...state, connected: false }))
+        setSocketState(state => ({ ...state, isConnected: false, isConnecting: false }))
     }
 
     function connect(host: string) {
@@ -35,39 +37,16 @@ export function useSocket() {
         }
 
         socket = io(host);
-        setSocketState(state => ({ host, socket, connected: false }))
+        setSocketState(state => ({ host, socket, isConnected: false, isConnecting: true }))
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
     }
 
     return {
-        isConnected: socketState.connected,
+        isConnected: socketState.isConnected,
+        isConnecting: socketState.isConnecting,
         host: socketState.host,
         socket: socketState.socket,
         connect
     }
 }
-
-// function emitAndWait(eventName: string, ...args: any[]) {
-//     return new Promise((resolve, reject) => {
-//         socket?.emit(eventName, ...args, (response: any) => {
-//             resolve(response);
-//         })
-//     })
-// }
-
-// async function createSession(sessionName: string) {
-//     return await emitAndWait('createSession', sessionName);
-// }
-
-// function joinSession(sessionId: string) {
-
-// }
-
-// function deleteSession(sessionId: string) {
-
-// }
-
-// function setSessionState(sessionId: string, state: 'white' | 'black') {
-
-// }

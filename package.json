@@ -5,8 +5,8 @@
   "license": "ISC",
   "description": "",
   "scripts": {
-    "start:app": "cd apps/lightshow-app && npm start",
-    "start:server": "cd apps/lightshow-server && npm start"
+    "dev:app": "cd apps/lightshow-app && npm start",
+    "dev:server": "cd apps/lightshow-server && npm run dev"
   },
   "workspaces": [
     "apps/*",
