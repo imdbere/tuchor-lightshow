@@ -1,18 +1,23 @@
 {
-  "name": "toxic-workplace-games",
+  "name": "tuchor-lightshow",
   "version": "1.0.0",
   "author": "",
   "license": "ISC",
   "description": "",
   "scripts": {
     "dev:app": "cd apps/lightshow-app && npm start",
-    "dev:server": "cd apps/lightshow-server && npm run dev"
+    "dev:server": "cd apps/lightshow-server && npm run dev",
+    "typecheck:app": "cd apps/lightshow-app && npx tsc --noEmit",
+    "typecheck:server": "cd apps/lightshow-server && npx tsc --noEmit",
+    "typecheck": "npm run typecheck:app && npm run typecheck:server",
+    "prepare": "husky"
   },
   "workspaces": [
     "apps/*",
     "shared"
   ],
   "devDependencies": {
+    "husky": "^9.1.7",
     "prettier": "^3.5.3"
   }
 }
