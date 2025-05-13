@@ -18,9 +18,6 @@
         "NSLocalNetworkUsageDescription": "Allow Tuchor Lightshow to discover devices on the local network.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "entitlements": {
-        "com.apple.developer.networking.multicast": true
-      },
       "bundleIdentifier": "com.p.aaron.tuchorlightshow"
     },
     "android": {
